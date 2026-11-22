@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App de Leo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f6f9fc 0%, #e9f0f5 100%);
+            --text-main: #1a202c;
+            --text-muted: #718096;
+            --primary: #8b5a5a;
+            --primary-dark: #6b3b38;
+            --accent: #48bb78;
+            --danger: #e53e3e;
+            --warning: #ed8936;
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.9);
+            --card-radius: 24px;
+            --shadow-soft: 0 8px 30px rgba(0,0,0,0.04);
+            --shadow-hover: 0 15px 35px rgba(0,0,0,0.08);
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+            --duration-fast: 150ms;
+            --duration-normal: 250ms;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            padding: 20px; 
+            padding-bottom: 110px;
+            min-height: 100vh;
+            background-attachment: fixed;
+            line-height: 1.5;
+        }
+
+        h1, h2, h3 { margin-top: 0; letter-spacing: -0.02em; }
+        h1 { text-align: center; font-weight: 700; color: var(--primary); margin-bottom: 30px; font-size: 26px;}
+
+        /* --- PANTALLA DE BIENVENIDA --- */
+        #pantalla-bienvenida {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-gradient);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 1000; transition: opacity var(--duration-normal) var(--ease-out);
+        }
+        #pantalla-bienvenida h1 { font-size: 42px; margin-bottom: 8px; }
+        #pantalla-bienvenida p { color: var(--text-muted); font-size: 16px; margin-bottom: 48px; font-weight: 500; text-transform: capitalize;}
+        
+        .btn-entrar {
+            padding: 18px 48px; background: var(--primary); color: white; border: none; border-radius: 50px;
+            font-size: 16px; font-weight: 600; font-family: inherit; cursor: pointer; 
+            box-shadow: 0 10px 25px rgba(139, 90, 90, 0.3); 
+            transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+        }
+        .btn-entrar:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(139, 90, 90, 0.4); }
+        .btn-entrar:active { transform: scale(0.96); }
+
+        /* --- MENÚ DE NAVEGACIÓN (7 botones) --- */
+        .menu-app {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            width: 96%; max-width: 650px; background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+            display: flex; justify-content: space-around; padding: 10px 0;
+            border-radius: 32px; border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft); z-index: 100;
+        }
+        .menu-app button {
+            background: none; border: none; font-size: 9px; font-weight: 600; font-family: inherit;
+            color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; 
+            transition: all var(--duration-fast) var(--ease-out); width: 14.2%;
+        }
+        .menu-app button.activo { color: var(--primary); transform: translateY(-3px); }
+        .menu-app button span { font-size: 20px; margin-bottom: 4px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); }
+
+        /* --- VISTAS --- */
+        .vista { display: none; animation: fadeIn var(--duration-normal) var(--ease-out); }
+        .vista.activa { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- DASHBOARD (Bento Grid) --- */
+        .bento-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 900px; margin: 0 auto; }
+        .card { background: var(--glass-bg); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); border-radius: var(--card-radius); padding: 24px; box-shadow: var(--shadow-soft); transition: transform var(--duration-normal) var(--ease-out); }
+        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+        .card-perfil { grid-column: span 2; display: flex; justify-content: space-between; align-items: center; }
+        .card-perfil .saludo { font-size: 24px; font-weight: 700; margin: 0; color: var(--primary);}
+        .card-perfil .fecha { font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0; font-weight: 500;}
+        .imc-circle { width: 70px; height: 70px; border-radius: 50%; background: var(--accent); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-weight: 700; font-size: 20px; box-shadow: 0 6px 15px rgba(72, 187, 120, 0.3);}
+        .imc-circle span { font-size: 9px; font-weight: 600; opacity: 0.9; letter-spacing: 1px;}
+        .card-stat { text-align: center; padding: 20px; }
+        .card-stat h3 { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;}
+        .card-stat p { font-size: 22px; font-weight: 700; color: var(--primary); margin: 0;}
+        .card-recomendacion { grid-column: span 2; border-left: 4px solid var(--accent); background: rgba(240, 255, 244, 0.6); }
+        .card-recomendacion h3 { color: #22543d; font-size: 15px; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;}
+        .card-recomendacion p { color: #276749; font-size: 14px; margin: 0; line-height: 1.6;}
+        .card-tareas { grid-column: span 2; }
+        .card-tareas h3, .card-horario h3 { font-size: 16px; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
+        .tarea-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.8); padding: 16px; margin-bottom: 10px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.03); }
+        .tarea-item .tarea-info strong { color: var(--primary); font-size: 14px; display: block; margin-bottom: 2px;}
+        .tarea-item .tarea-info span { font-size: 13px; color: var(--text-muted);}
+        .btn-completar { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; }
+        .card-horario { grid-column: span 1; }
+        .resumen-item { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .resumen-item .icon { font-size: 20px; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+        .resumen-item .text h4 { margin: 0; font-size: 13px; color: var(--text-main); font-weight: 600;}
+        .resumen-item .text p { margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted); }
+
+        @media (max-width: 600px) {
+            .bento-grid { grid-template-columns: 1fr; }
+            .card-perfil, .card-recomendacion, .card-tareas, .card-horario { grid-column: span 1; }
+        }
+
+        /* --- HORARIO --- */
+        .contenedor-horario { display: grid; grid-template-columns: 60px repeat(6, 1fr); gap: 6px; overflow-x: auto; max-width: 1200px; margin: 0 auto; grid-template-rows: auto repeat(7, minmax(60px, auto)); }
+        .celda { background: var(--glass-bg); backdrop-filter: blur(10px); border-radius: 12px; padding: 8px; text-align: center; font-size: 12px; display: flex; flex-direction: column; justify-content: center; border: 1px solid var(--glass-border); }
+        .dia { font-weight: 700; background: white; padding: 12px 0; color: var(--primary); text-transform: uppercase; font-size: 10px; }
+        .hora { font-weight: 600; font-size: 10px; color: var(--text-muted); box-shadow: none; border: none;}
+        .clase { border-radius: 12px; padding: 8px; font-weight: 600; font-size: 11px; margin: 2px; display: flex; flex-direction: column; justify-content: center; cursor: pointer; transition: transform var(--duration-fast); border: 1px solid rgba(0,0,0,0.05); }
+        .clase:hover { transform: scale(1.03); z-index: 10;}
+        .teoria { background-color: #fef2f2; color: #991b1b; }
+        .practica { background-color: #fee2e2; color: #7f1d1d; }
+        .anapol { background-color: #eff6ff; color: #1e3a8a; }
+        .gym-color { background-color: #f0fdf4; color: #166534; }
+        .cardio { background-color: #f0fdfa; color: #115e59; }
+
+        /* --- MODAL --- */
+        .modal-fondo { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-contenido { background: white; padding: 32px; border-radius: 24px; width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); animation: modalPop var(--duration-normal); }
+        @keyframes modalPop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-contenido h3 { margin-top: 0; color: var(--primary); font-size: 20px; }
+        .modal-contenido input { width: 100%; padding: 16px; margin: 16px 0; border: 1px solid #e2e8f0; border-radius: 12px; font-family: inherit; }
+        .modal-botones { display: flex; gap: 12px; }
+        .modal-botones button { flex: 1; padding: 14px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-guardar { background: var(--primary); color: white; }
+        .btn-cancelar { background: #f1f5f9; color: var(--text-muted); }
+
+        /* --- FORMULARIOS GENERALES --- */
+        .formulario { background: var(--glass-bg); backdrop-filter: blur(16px); padding: 24px; border-radius: 24px; max-width: 500px; margin: 0 auto 24px auto; box-shadow: var(--shadow-soft); border: 1px solid var(--glass-border); }
+        .formulario input, .formulario textarea, .formulario select { width: 100%; padding: 16px; margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-family: inherit; background: white; font-size: 15px; }
+        .formulario button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; margin-top: 8px;}
+        .lista-items { max-width: 500px; margin: 0 auto; }
+        
+        /* --- GYM --- */
+        .tarjeta-gym { background: white; padding: 20px; margin-bottom: 12px; border-radius: 16px; box-shadow: var(--shadow-soft); border-left: 4px solid var(--primary); display: flex; flex-direction: column; gap: 10px; }
+        .tarjeta-gym .header { display: flex; justify-content: space-between; align-items: flex-start;}
+        .tarjeta-gym h4 { margin: 0; color: var(--primary); font-size: 16px; }
+        .tarjeta-gym .detalles { font-size: 14px; color: var(--text-main); font-weight: 500;}
+        .tarjeta-gym .fecha { font-size: 11px; color: var(--text-muted); }
+        .alerta-dolor { background: #fff5f5; color: var(--danger); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid #fed7d7; }
+        .alerta-nota { background: #f7fafc; color: var(--text-muted); padding: 10px; border-radius: 8px; font-size: 13px; font-style: italic; border-left: 2px solid #cbd5e0; }
+
+        /* --- PLAN POLICIAL --- */
+        .semana-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
+        .semana-btn { padding: 10px 20px; border-radius: 20px; border: 2px solid var(--primary); background: white; color: var(--primary); cursor: pointer; font-weight: 700; font-family: inherit; }
+        .semana-btn.activo { background: var(--primary); color: white; }
+        .reglas-oro { background: #fffbeb; border-left: 4px solid var(--warning); padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; color: #78350f; }
+        .reglas-oro h4 { margin: 0 0 10px 0; font-size: 14px; }
+        .reglas-oro ul { margin: 0; padding-left: 20px; }
+        .plan-dia-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 15px; box-shadow: var(--shadow-soft); border-left: 4px solid var(--accent); }
+        .plan-dia-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
+        .plan-dia-header h4 { margin: 0; font-size: 16px; color: var(--primary); }
+        .plan-dia-card p { font-size: 14px; color: var(--text-main); margin-bottom: 15px; line-height: 1.6;}
+        .btn-check { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-family: inherit; font-weight: 600;}
+
+        /* --- NUTRICIÓN --- */
+        .nutri-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 15px; box-shadow: var(--shadow-soft); border-left: 4px solid var(--warning); }
+        .nutri-card h3 { font-size: 16px; color: var(--primary); margin-bottom: 10px; }
+        .nutri-card p { font-size: 14px; margin-bottom: 10px; }
+        
+        .check-ingredientes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .check-item { display: flex; align-items: center; gap: 8px; font-size: 14px; background: #f8fafc; padding: 10px; border-radius: 8px; cursor: pointer;}
+        .check-item input { width: 18px; height: 18px; margin: 0; cursor: pointer; }
+
+        /* Perfil y Notas */
+        .perfil-contenedor { max-width: 500px; margin: 0 auto; }
+        .perfil-card { background: white; padding: 30px; border-radius: 24px; box-shadow: var(--shadow-soft); text-align: center; margin-bottom: 20px;}
+        .perfil-avatar { width: 100px; height: 100px; border-radius: 50%; background: var(--primary); color: white; font-size: 40px; font-weight: 700; display: flex; justify-content: center; align-items: center; margin: 0 auto 15px auto; }
+        .perfil-card h2 { color: var(--primary); font-size: 24px; margin-bottom: 5px;}
+        .perfil-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; text-align: left; }
+        .perfil-dato { background: #f8fafc; padding: 15px; border-radius: 12px; }
+        .perfil-dato span { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;}
+        .tarjeta-nota { background: #fffbeb; padding: 20px; margin-bottom: 12px; border-radius: 16px; position: relative; border-left: 4px solid #f59e0b; box-shadow: var(--shadow-soft); }
+    </style>
+</head>
+<body>
+
+    <!-- BIENVENIDA -->
+    <div id="pantalla-bienvenida">
+        <h1>Hola, Leo 👋</h1>
+        <p id="fecha-bienvenida"></p>
+        <button class="btn-entrar" onclick="entrarApp()">Entrar a la App</button>
+    </div>
+
+    <!-- MODAL TAREAS -->
+    <div id="modal-tarea" class="modal-fondo">
+        <div class="modal-contenido">
+            <h3>Agregar Tarea</h3>
+            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">Pendiente de <strong id="modal-materia-nombre"></strong>:</p>
+            <input type="text" id="input-tarea-texto" placeholder="Ej: Estudiar para el examen...">
+            <div class="modal-botones">
+                <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn-guardar" onclick="guardarTarea()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA INICIO -->
+    <section id="vista-inicio" class="vista activa">
+        <h1>MI DASHBOARD</h1>
+        <div class="bento-grid">
+            <div class="card card-perfil">
+                <div>
+                    <p class="saludo" id="saludo-texto">Hola, Leo</p>
+                    <p class="fecha" id="fecha-hoy"></p>
+                </div>
+                <div class="imc-circle">20.3<span>IMC</span></div>
+            </div>
+            <div class="card card-stat"><h3>Peso</h3><p>52 kg</p></div>
+            <div class="card card-stat"><h3>Altura</h3><p>1.60 m</p></div>
+
+            <div id="card-recomendacion" class="card card-recomendacion" style="display: none;">
+                <h3>💡 Recomendación</h3>
+                <p id="texto-recomendacion"></p>
+            </div>
+
+            <div class="card card-recomendacion" style="background: #ebf8ff; border-left-color: #3182ce;">
+                <h3 style="color: #2b6cb0;">😴 Descanso Óptimo</h3>
+                <p style="color: #2c5282;">Para rendir a las 5:00 AM en altura, duerme entre <strong>9:00 PM y 9:30 PM</strong>.</p>
+            </div>
+
+            <div class="card card-tareas">
+                <h3>📌 Tareas Pendientes</h3>
+                <div id="lista-tareas-inicio"></div>
+            </div>
+            <div class="card card-horario"><h3>🔥 Hoy toca</h3><div id="resumen-hoy"></div></div>
+            <div class="card card-horario" style="opacity: 0.85;"><h3>⏭️ Mañana toca</h3><div id="resumen-manana"></div></div>
+        </div>
+    </section>
+
+    <!-- VISTA HORARIO -->
+    <section id="vista-horario" class="vista">
+        <h1>MI HORARIO</h1>
+        <p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: -15px; margin-bottom: 20px;">💡 Toca un bloque para agregar tarea</p>
+        <div class="contenedor-horario">
+            <div class="celda dia" style="grid-column: 1; grid-row: 1; background: transparent; border: none;"></div>
+            <div class="celda dia" style="grid-column: 2; grid-row: 1;">LUN</div>
+            <div class="celda dia" style="grid-column: 3; grid-row: 1;">MAR</div>
+            <div class="celda dia" style="grid-column: 4; grid-row: 1;">MIÉ</div>
+            <div class="celda dia" style="grid-column: 5; grid-row: 1;">JUE</div>
+            <div class="celda dia" style="grid-column: 6; grid-row: 1;">VIE</div>
+            <div class="celda dia" style="grid-column: 7; grid-row: 1;">SÁB</div>
+
+            <div class="celda hora" style="grid-column: 1; grid-row: 2;">05:00<br>06:00</div>
+            <div class="celda clase cardio" style="grid-column: 2; grid-row: 2;" onclick="abrirModal('Trote y Abs')">TROTE</div>
+            <div class="celda clase cardio" style="grid-column: 3; grid-row: 2;" onclick="abrirModal('Trote y Abs')">TROTE</div>
+            <div class="celda clase cardio" style="grid-column: 4; grid-row: 2;" onclick="abrirModal('Trote y Abs')">TROTE</div>
+            <div class="celda clase cardio" style="grid-column: 5; grid-row: 2;" onclick="abrirModal('Trote y Abs')">TROTE</div>
+            <div class="celda clase cardio" style="grid-column: 6; grid-row: 2;" onclick="abrirModal('Trote y Abs')">TROTE</div>
+            <div class="celda clase cardio" style="grid-column: 7; grid-row: 2;" onclick="abrirModal('Trote y Abs')">TROTE</div>
+
+            <div class="celda hora" style="grid-column: 1; grid-row: 3;">07:30<br>09:00</div>
+            <div class="celda" style="grid-column: 2; grid-row: 3;"></div>
+            <div class="celda" style="grid-column: 3; grid-row: 3;"></div>
+            <div class="celda" style="grid-column: 4; grid-row: 3;"></div>
+            <div class="celda clase practica" style="grid-column: 5; grid-row: 3;" onclick="abrirModal('Química Analítica (Lab)')">QUÍM. ANALÍTICA</div>
+            <div class="celda clase teoria" style="grid-column: 6; grid-row: 3;" onclick="abrirModal('Química Farmacéutica')">QUÍM. FARMACÉUTICA</div>
+            <div class="celda" style="grid-column: 7; grid-row: 3;"></div>
+
+            <div class="celda hora" style="grid-column: 1; grid-row: 4 / span 2;">09:15<br>11:00</div>
+            <div class="celda clase teoria" style="grid-column: 2; grid-row: 4 / span 2;" onclick="abrirModal('Farmacognosia')">FARMACOGNOSIA</div>
+            <div class="celda clase practica" style="grid-column: 3; grid-row: 4 / span 2;" onclick="abrirModal('Citología e Histología')">CITOLOGÍA</div>
+            <div class="celda clase teoria" style="grid-column: 4; grid-row: 4 / span 2;" onclick="abrirModal('Fisiopatología')">FISIOPATOLOGÍA</div>
+            <div class="celda clase teoria" style="grid-column: 5; grid-row: 4 / span 2;" onclick="abrirModal('Química Analítica')">QUÍM. ANALÍTICA</div>
+            <div class="celda clase teoria" style="grid-column: 6; grid-row: 4 / span 2;" onclick="abrirModal('Química Farmacéutica')">QUÍM. FARMACÉUTICA</div>
+            <div class="celda clase teoria" style="grid-column: 7; grid-row: 4 / span 2;" onclick="abrirModal('Proyecto Integrador')">PROYECTO</div>
+
+            <div class="celda hora" style="grid-column: 1; grid-row: 6;">11:45<br>12:30</div>
+            <div class="celda clase teoria" style="grid-column: 2; grid-row: 6;" onclick="abrirModal('Farmacognosia')">FARMACOGNOSIA</div>
+            <div class="celda clase teoria" style="grid-column: 3; grid-row: 6;" onclick="abrirModal('Citología e Histología')">CITOLOGÍA</div>
+            <div class="celda clase practica" style="grid-column: 4; grid-row: 6;" onclick="abrirModal('Bioquímica (Lab)')">BIOQUÍMICA</div>
+            <div class="celda clase teoria" style="grid-column: 5; grid-row: 6;" onclick="abrirModal('Bioquímica')">BIOQUÍMICA</div>
+            <div class="celda" style="grid-column: 6; grid-row: 6;"></div>
+            <div class="celda clase teoria" style="grid-column: 7; grid-row: 6;" onclick="abrirModal('Inglés II')">INGLÉS</div>
+
+            <div class="celda hora" style="grid-column: 1; grid-row: 7;">13:00<br>16:00</div>
+            <div class="celda clase anapol" style="grid-column: 2 / span 5; grid-row: 7;" onclick="abrirModal('Instituto ANAPOL')">ANAPOL</div>
+            <div class="celda" style="grid-column: 7; grid-row: 7;"></div>
+
+            <div class="celda hora" style="grid-column: 1; grid-row: 8;">16:00<br>19:00</div>
+            <div class="celda" style="grid-column: 2 / span 4; grid-row: 8;"></div>
+            <div class="celda clase gym-color" style="grid-column: 6; grid-row: 8; background-color: #dcfce7; color: #166534;" onclick="abrirModal('Piscina')">PISCINA</div>
+            <div class="celda" style="grid-column: 7; grid-row: 8;"></div>
+
+            <div class="celda hora" style="grid-column: 1; grid-row: 9;">19:00<br>21:00</div>
+            <div class="celda" style="grid-column: 2; grid-row: 9;"></div>
+            <div class="celda clase gym-color" style="grid-column: 3 / span 4; grid-row: 9;" onclick="abrirModal('Gimnasio')">GIMNASIO</div>
+            <div class="celda" style="grid-column: 7; grid-row: 9;"></div>
+        </div>
+    </section>
+
+    <!-- VISTA PLAN POLICIAL -->
+    <section id="vista-plan" class="vista">
+        <h1>PLAN 3200m (13 min)</h1>
+        <div class="plan-header">
+            <p style="color: var(--text-muted); font-size: 14px; text-align: center;">Preparación Academia de Policía - El Alto</p>
+            <div class="semana-selector" style="margin-top: 15px;">
+                <button class="semana-btn activo" onclick="cambiarSemana(1)">Sem 1</button>
+                <button class="semana-btn" onclick="cambiarSemana(2)">Sem 2</button>
+                <button class="semana-btn" onclick="cambiarSemana(3)">Sem 3</button>
+                <button class="semana-btn" onclick="cambiarSemana(4)">Sem 4</button>
+            </div>
+        </div>
+        <div class="lista-items">
+            <div class="reglas-oro">
+                <h4>⚠️ Reglas de Oro (5 AM en Altura)</h4>
+                <ul>
+                    <li><strong>Calienta en casa:</strong> 5 min de saltos.</li>
+                    <li><strong>Viste en capas:</strong> Usa buff en la boca al inicio.</li>
+                    <li><strong>RPE:</strong> Si falta el aire, baja la velocidad.</li>
+                </ul>
+            </div>
+            <div id="contenedor-plan-semanas"></div>
+        </div>
+    </section>
+
+    <!-- VISTA NUTRICIÓN -->
+    <section id="vista-nutricion" class="vista">
+        <h1>NUTRICIÓN Y CREATINA</h1>
+        <div class="lista-items">
+            <div class="nutri-card" style="border-left-color: #e53e3e;">
+                <h3>💊 Guía de Creatina (Empiezas el Martes)</h3>
+                <p><strong>Dosis:</strong> 5 gramos (una cucharadita) al día, todos los días (incluso días de descanso).</p>
+                <p><strong>¿Cuándo tomarla?</strong> Después del entrenamiento (o con el almuerzo). Mézclala con agua o jugo. ¡No necesita fase de carga!</p>
+                <p><strong>Ojo en El Alto:</strong> La creatina atrae agua a los músculos. Debes tomar <strong>mucha agua</strong> (3 litros al día) para evitar dolores de cabeza.</p>
+            </div>
+
+            <div class="nutri-card" style="border-left-color: #3182ce;">
+                <h3>⏰ Horarios de Comida (Tu Rutina)</h3>
+                <ul style="font-size: 14px; padding-left: 20px; line-height: 1.8;">
+                    <li><strong>4:40 AM:</strong> Medio plátano o un vaso de agua (antes del trote).</li>
+                    <li><strong>6:15 AM:</strong> Desayuno fuerte post-trote (Huevos + Avena).</li>
+                    <li><strong>12:30 PM:</strong> Almuerzo principal (Pollo/Carne + Arroz/Papa).</li>
+                    <li><strong>4:30 PM:</strong> Merienda pre-gym (Pan + Queso/Huevo + Fruta).</li>
+                    <li><strong>9:00 PM:</strong> Cena ligera post-gym (Atún o Huevos + Verduras). <br><em>*Toma tu creatina aquí.</em></li>
+                </ul>
+            </div>
+
+            <div class="nutri-card" style="border-left-color: var(--accent);">
+                <h3>🧊 ¿Qué tengo en la refri?</h3>
+                <p style="font-size: 13px; color: var(--text-muted);">Marca los ingredientes que tengas en casa ahora y te diré qué preparar.</p>
+                
+                <div class="check-ingredientes">
+                    <label class="check-item"><input type="checkbox" value="huevo" class="ingrediente"> 🥚 Huevos</label>
+                    <label class="check-item"><input type="checkbox" value="pollo" class="ingrediente"> 🍗 Pollo</label>
+                    <label class="check-item"><input type="checkbox" value="arroz" class="ingrediente"> 🍚 Arroz</label>
+                    <label class="check-item"><input type="checkbox" value="papa" class="ingrediente"> 🥔 Papa</label>
+                    <label class="check-item"><input type="checkbox" value="avena" class="ingrediente"> 🥣 Avena</label>
+                    <label class="check-item"><input type="checkbox" value="platano" class="ingrediente"> 🍌 Plátano</label>
+                    <label class="check-item"><input type="checkbox" value="atun" class="ingrediente"> 🐟 Atún</label>
+                    <label class="check-item"><input type="checkbox" value="pan" class="ingrediente"> 🍞 Pan</label>
+                </div>
+                
+                <button onclick="generarReceta()" style="width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">¿Qué puedo comer?</button>
+                
+                <div id="resultado-receta" style="display: none; margin-top: 15px; padding: 15px; background: #f0fff4; border-radius: 12px; border: 1px solid #c6f6d5;">
+                    <h4 style="color: #22543d; margin-bottom: 5px;" id="titulo-receta"></h4>
+                    <p style="font-size: 14px; color: #276749;" id="texto-receta"></p>
+                </div>
+            </div>
+
+            <div class="nutri-card">
+                <h3>🍳 Recetas Simples (Estilo Bolivia)</h3>
+                <p><strong>1. Revuelto de Quinua y Huevo:</strong> Cocina un poco de quinua (o arroz del día anterior). En un sartén sofríe cebolla, agrega 2 huevos y mézclalo con la quinua. Súper proteico.</p>
+                <p><strong>2. Sándwich de Atún Fitness:</strong> Pan integral (o marraqueta sin migajón), 1 lata de atún, tomate y un poco de mayonesa light o yogurt natural. Ideal pre-gym.</p>
+                <p><strong>3. Batido de Avena y Plátano:</strong> Licúa 3 cucharadas de avena, 1 plátano, leche (Pil) y hielo. Perfecto para el desayuno post-trote.</p>
+                <p><strong>4. Papa a la sartén con Pollo:</strong> Corta papas en cuadritos y cocínalas con poco aceite. Agrega trozos de pollo. Sazona con poco de condimento. Rápido y lleno de energía.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- VISTA GYM -->
+    <section id="vista-gym" class="vista">
+        <h1>DIARIO DE GYM</h1>
+        <div class="formulario">
+            <input type="text" id="ejercicio-nombre" placeholder="Ejercicio (Ej: Press banca)">
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="ejercicio-peso" placeholder="Peso (kg)" style="flex: 1;">
+                <input type="text" id="ejercicio-reps" placeholder="Series x Reps" style="flex: 2;">
+            </div>
+            <select id="ejercicio-dolor">
+                <option value="Ninguno">¿Tuviste dolor/molestia?</option>
+                <option value="Leve">Dolor Leve</option>
+                <option value="Fuerte">Dolor Fuerte</option>
+                <option value="Fatiga">Solo Fatiga muscular</option>
+            </select>
+            <textarea id="ejercicio-dudas" placeholder="Dudas técnicas o notas..." style="height: 80px; resize: none;"></textarea>
+            <button onclick="guardarEjercicio()">Guardar Entrenamiento</button>
+        </div>
+        <div id="lista-ejercicios" class="lista-items"></div>
+    </section>
+
+    <!-- VISTA NOTAS -->
+    <section id="vista-notas" class="vista">
+        <h1>MIS NOTAS</h1>
+        <div class="formulario">
+            <textarea id="input-nota" placeholder="Escribe una duda o apunte..." style="height: 100px; resize: none;"></textarea>
+            <button onclick="guardarNota()">Guardar Nota</button>
+        </div>
+        <div id="lista-notas" class="lista-items"></div>
+    </section>
+
+    <!-- VISTA PERFIL -->
+    <section id="vista-perfil" class="vista">
+        <h1>MI PERFIL</h1>
+        <div class="perfil-contenedor">
+            <div class="perfil-card">
+                <div class="perfil-avatar">L</div>
+                <h2>Leo</h2>
+                <p>Estudiante de Farmacia</p>
+                <div class="perfil-datos">
+                    <div class="perfil-dato"><span>Peso</span><strong>52 kg</strong></div>
+                    <div class="perfil-dato"><span>Altura</span><strong>1.60 m</strong></div>
+                    <div class="perfil-dato"><span>IMC</span><strong style="color: var(--accent);">20.3</strong></div>
+                    <div class="perfil-dato"><span>Meta</span><strong>3200m - 13 min</strong></div>
+                </div>
+            </div>
+            <div class="card" style="text-align: center; background: white; padding: 20px; border-radius: 16px; box-shadow: var(--shadow-soft);">
+                <h3 style="color: var(--primary); margin-bottom: 10px;">Estadísticas</h3>
+                <p style="font-size: 14px; color: var(--text-muted);">Has registrado <strong id="stats-gym">0</strong> entrenamientos y <strong id="stats-notas">0</strong> notas.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MENÚ NAVEGACIÓN -->
+    <nav class="menu-app">
+        <button id="btn-inicio" class="activo" onclick="cambiarVista('inicio')"><span>🏠</span>Inicio</button>
+        <button id="btn-horario" onclick="cambiarVista('horario')"><span>📅</span>Horario</button>
+        <button id="btn-plan" onclick="cambiarVista('plan')"><span>🏃</span>Plan</button>
+        <button id="btn-nutricion" onclick="cambiarVista('nutricion')"><span>🍎</span>Comida</button>
+        <button id="btn-gym" onclick="cambiarVista('gym')"><span>🏋️</span>Gym</button>
+        <button id="btn-notas" onclick="cambiarVista('notas')"><span>📝</span>Notas</button>
+        <button id="btn-perfil" onclick="cambiarVista('perfil')"><span>👤</span>Perfil</button>
+    </nav>
+
+    <!-- JAVASCRIPT -->
+    <script>
+        const nombreUsuario = "Leo";
+
+        document.getElementById('fecha-bienvenida').textContent = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('fecha-hoy').textContent = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+        
+        function entrarApp() {
+            document.getElementById('pantalla-bienvenida').style.opacity = '0';
+            setTimeout(() => { document.getElementById('pantalla-bienvenida').style.display = 'none'; }, 250);
+            actualizarInicio();
+        }
+
+        function cambiarVista(nombreVista) {
+            document.querySelectorAll('.vista').forEach(vista => vista.classList.remove('activa'));
+            document.querySelectorAll('.menu-app button').forEach(btn => btn.classList.remove('activo'));
+            document.getElementById('vista-' + nombreVista).classList.add('activa');
+            document.getElementById('btn-' + nombreVista).classList.add('activo');
+            if(nombreVista === 'perfil') actualizarEstadisticas();
+            if(nombreVista === 'plan') renderizarPlanPoli();
+        }
+
+        // --- LÓGICA DEL PLAN POLICIAL ---
+        let semanaActual = 1;
+        const planSemanal = {
+            1: { lun: "6 series de 400m", mie: "15 min ritmo Tempo", vie: "8 series de 200m", sab: "30 min suaves" },
+            2: { lun: "8 series de 400m", mie: "20 min ritmo Tempo", vie: "10 series de 200m", sab: "35-40 min suaves" },
+            3: { lun: "10 series de 400m", mie: "2 bloques de 10 min ritmo prueba", vie: "12 series de 200m", sab: "40 min suaves" },
+            4: { lun: "5 series de 400m", mie: "10 min ritmo prueba", vie: "6 series de 200m", sab: "20-25 min suaves" }
+        };
+        const rutinaPlan = {
+            1: { dia: "Lunes", tipo: "Series 400m", desc: "Calienta 10 min. Corre 400m fuerte. Descansa 1:30-2 min. Enfría 5-10 min." },
+            2: { dia: "Martes", tipo: "Trote + Core", desc: "25-30 min trote conversacional. Core 15 min: Dead Bug 10x, Reverse Crunch 12, Criss-Cross 15, Plancha 30s." },
+            3: { dia: "Miércoles", tipo: "Ritmo Tempo", desc: "Calienta 10 min. Ritmo cómodamente duro. Enfría 5-10 min." },
+            4: { dia: "Jueves", tipo: "Recuperación", desc: "Descanso total o trote súper suave de 15 min." },
+            5: { dia: "Viernes", tipo: "Series 200m", desc: "Calienta 10 min. 200m máxima velocidad. Descansa 1 min. Enfría." },
+            6: { dia: "Sábado", tipo: "Trote Largo", desc: "30-40 min trote continuo suave. Si falta el aire, camina y sigue." },
+            0: { dia: "Domingo", tipo: "Descanso", desc: "Nada de correr. Duerme, come bien e hidrátate." }
+        };
+
+        function cambiarSemana(sem) {
+            semanaActual = sem;
+            document.querySelectorAll('.semana-btn').forEach(btn => btn.classList.remove('activo'));
+            document.querySelectorAll('.semana-btn')[sem-1].classList.add('activo');
+            renderizarPlanPoli();
+        }
+
+        function renderizarPlanPoli() {
+            const contenedor = document.getElementById('contenedor-plan-semanas');
+            const prog = planSemanal[semanaActual];
+            const hoyIndex = new Date().getDay(); 
+            let html = '';
+            const ordenDias = [1, 2, 3, 4, 5, 6, 0];
+            
+            ordenDias.forEach(indexDia => {
+                const info = rutinaPlan[indexDia];
+                let detalle = "";
+                if(indexDia === 1) detalle = `👉 <strong>Volumen Sem ${semanaActual}:</strong> ${prog.lun}`;
+                if(indexDia === 3) detalle = `👉 <strong>Volumen Sem ${semanaActual}:</strong> ${prog.mie}`;
+                if(indexDia === 5) detalle = `👉 <strong>Volumen Sem ${semanaActual}:</strong> ${prog.vie}`;
+                if(indexDia === 6) detalle = `👉 <strong>Volumen Sem ${semanaActual}:</strong> ${prog.sab}`;
+
+                const esHoy = (indexDia === hoyIndex);
+                const completado = localStorage.getItem(`plan_${semanaActual}_${indexDia}`) === 'true';
+
+                html += `
+                    <div class="plan-dia-card" style="${esHoy ? 'border-left: 4px solid var(--warning); background: #fffaf0;' : ''}">
+                        <div class="plan-dia-header">
+                            <h4>${info.dia} ${esHoy ? '(HOY)' : ''}</h4>
+                            <span style="font-size: 12px; font-weight: bold; color: ${completado ? 'var(--accent)' : 'var(--text-muted)'}">${completado ? '✓ Hecho' : 'Pendiente'}</span>
+                        </div>
+                        <p><strong>${info.tipo}:</strong> ${info.desc}</p>
+                        ${detalle ? `<p style="color: var(--primary); font-size: 13px; margin-bottom: 10px; background: #fdf2f2; padding: 8px; border-radius: 8px;">${detalle}</p>` : ''}
+                        <button class="btn-check" onclick="togglePlanDia(${indexDia})">${completado ? 'Desmarcar' : 'Marcar Completado'}</button>
+                    </div>
+                `;
+            });
+            contenedor.innerHTML = html;
+        }
+
+        function togglePlanDia(indexDia) {
+            const key = `plan_${semanaActual}_${indexDia}`;
+            localStorage.setItem(key, localStorage.getItem(key) !== 'true');
+            renderizarPlanPoli();
+        }
+
+        // --- LÓGICA DE NUTRICIÓN ---
+        function generarReceta() {
+            const checks = document.querySelectorAll('.ingrediente:checked');
+            const seleccionados = Array.from(checks).map(c => c.value);
+            const resDiv = document.getElementById('resultado-receta');
+            const titulo = document.getElementById('titulo-receta');
+            const texto = document.getElementById('texto-receta');
+
+            if (seleccionados.length === 0) {
+                alert("Selecciona al menos un ingrediente.");
+                return;
+            }
+
+            let receta = "";
+
+            // Lógica de combinación
+            if (seleccionados.includes('huevo') && seleccionados.includes('avena')) {
+                titulo.textContent = "🥞 Tortilla de Avena y Huevo";
+                receta = "Mezcla 2 huevos con 3 cucharadas de avena. Cocina en sartén antiadherente. Si tienes plátano, córtalo en rodajas y ponlo encima. ¡Súper desayuno post-trote!";
+            } else if (seleccionados.includes('pollo') && (seleccionados.includes('arroz') || seleccionados.includes('papa'))) {
+                titulo.textContent = "🍗 Pollo con Carbohidratos";
+                receta = "Cocina el pollo a la plancha con poco aceite. Acompáñalo con arroz o papa sancochada. Si tienes tomate/cebolla, haz una ensalada rápida. Comida perfecta para el almuerzo.";
+            } else if (seleccionados.includes('atun') && seleccionados.includes('pan')) {
+                titulo.textContent = "🥪 Sándwich de Atún";
+                receta = "Abre una lata de atún, mézclala con un poco de mayonesa o yogurt. Ponla sobre el pan. Ideal como merienda rápida pre-gym.";
+            } else if (seleccionados.includes('papa') && seleccionados.includes('huevo')) {
+                titulo.textContent = "🍳 Revuelto de Papa y Huevo";
+                receta = "Corta la papa en cubos y hiérvela 10 min. Luego sofríela un poco y agrega 2 huevos batidos. Sazona. Es una bomba de energía.";
+            } else if (seleccionados.includes('platano') && seleccionados.includes('avena')) {
+                titulo.textContent = "🥤 Batido Express";
+                receta = "Licúa el plátano con la avena y agua o leche. Excelente para tomar justo después del entrenamiento o antes del trote.";
+            } else {
+                titulo.textContent = "🥗 Combinación Libre";
+                receta = "Con lo que tienes, prioriza hacer un plato con: 1 porción de proteína (huevo, pollo, atún) + 1 porción de carbohidrato (arroz, papa, pan). ¡Eso te mantendrá lleno de energía!";
+            }
+
+            texto.textContent = receta;
+            resDiv.style.display = 'block';
+        }
+
+        // --- LÓGICA DE TAREAS ---
+        let materiaSeleccionada = "";
+        function abrirModal(materia) {
+            materiaSeleccionada = materia;
+            document.getElementById('modal-materia-nombre').textContent = materia;
+            document.getElementById('modal-tarea').style.display = 'flex';
+            document.getElementById('input-tarea-texto').focus();
+        }
+        function cerrarModal() {
+            document.getElementById('modal-tarea').style.display = 'none';
+            document.getElementById('input-tarea-texto').value = '';
+        }
+        function guardarTarea() {
+            const texto = document.getElementById('input-tarea-texto').value;
+            if (texto.trim() === '') return alert('Escribe la tarea primero.');
+            const nuevaTarea = { id: Date.now(), materia: materiaSeleccionada, tarea: texto, fecha: new Date().toLocaleDateString() };
+            let tareas = JSON.parse(localStorage.getItem('misTareasLeo')) || [];
+            tareas.push(nuevaTarea);
+            localStorage.setItem('misTareasLeo', JSON.stringify(tareas));
+            cerrarModal();
+            actualizarInicio(); 
+        }
+        function completarTarea(id) {
+            let tareas = JSON.parse(localStorage.getItem('misTareasLeo')) || [];
+            tareas = tareas.filter(t => t.id !== id);
+            localStorage.setItem('misTareasLeo', JSON.stringify(tareas));
+            actualizarInicio();
+        }
+
+        function actualizarInicio() {
+            const hora = new Date().getHours();
+            let momento = "días";
+            if (hora >= 12 && hora < 19) momento = "tardes";
+            else if (hora >= 19 || hora < 5) momento = "noches";
+            document.getElementById('saludo-texto').textContent = `¡Buenas ${momento}, ${nombreUsuario}!`;
+
+            const contenedorTareas = document.getElementById('lista-tareas-inicio');
+            let tareas = JSON.parse(localStorage.getItem('misTareasLeo')) || [];
+            if (tareas.length === 0) {
+                contenedorTareas.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:13px; padding: 10px;">¡Todo al día! No hay pendientes.</p>';
+            } else {
+                contenedorTareas.innerHTML = tareas.map(t => `
+                    <div class="tarea-item">
+                        <div class="tarea-info"><strong>${t.materia}</strong><span>${t.tarea}</span></div>
+                        <button class="btn-completar" onclick="completarTarea(${t.id})">Hecho ✓</button>
+                    </div>
+                `).join('');
+            }
+
+            const cardRec = document.getElementById('card-recomendacion');
+            const textoRec = document.getElementById('texto-recomendacion');
+            if (tareas.length > 0) {
+                const tareaSugerida = tareas[0]; 
+                textoRec.innerHTML = `Tienes pendiente <strong>${tareaSugerida.tarea}</strong> de ${tareaSugerida.materia}.`;
+                cardRec.style.display = 'block';
+            } else {
+                cardRec.style.display = 'none';
+            }
+            cargarResumenRutina();
+            actualizarEstadisticas();
+        }
+
+        const rutinaSemanal = {
+            0: [{ hora: "Todo el día", tarea: "Descanso / Estudiar", icon: "🛌" }],
+            1: [{ hora: "05:00", tarea: "Trote + Abs", icon: "🏃‍♂️" }, { hora: "09:15", tarea: "Farmacognosia", icon: "📚" }, { hora: "13:00", tarea: "ANAPOL", icon: "📖" }],
+            2: [{ hora: "05:00", tarea: "Trote + Abs", icon: "🏃‍♂️" }, { hora: "09:15", tarea: "Citología", icon: "🔬" }, { hora: "13:00", tarea: "ANAPOL", icon: "📖" }, { hora: "19:00", tarea: "Gym", icon: "🏋️" }],
+            3: [{ hora: "05:00", tarea: "Trote + Abs", icon: "🏃‍♂️" }, { hora: "09:15", tarea: "Fisiopatología", icon: "📚" }, { hora: "13:00", tarea: "ANAPOL", icon: "📖" }, { hora: "19:00", tarea: "Gym", icon: "🏋️" }],
+            4: [{ hora: "05:00", tarea: "Trote + Abs", icon: "🏃‍♂️" }, { hora: "07:30", tarea: "Química Analítica", icon: "🧪" }, { hora: "13:00", tarea: "ANAPOL", icon: "📖" }, { hora: "19:00", tarea: "Gym", icon: "🏋️" }],
+            5: [{ hora: "05:00", tarea: "Trote + Abs", icon: "🏃‍♂️" }, { hora: "07:30", tarea: "Química Farm.", icon: "⚗️" }, { hora: "13:00", tarea: "ANAPOL", icon: "📖" }, { hora: "19:00", tarea: "Gym", icon: "🏋️" }],
+            6: [{ hora: "05:00", tarea: "Trote + Abs", icon: "🏃‍♂️" }, { hora: "09:15", tarea: "Proyecto", icon: "📝" }, { hora: "16:00", tarea: "Piscina", icon: "🏊‍♂️" }]
+        };
+
+        function cargarResumenRutina() {
+            const hoyIndex = new Date().getDay();
+            const mananaIndex = (hoyIndex + 1) % 7;
+            const formatoHTML = (lista) => lista.map(item => `<div class="resumen-item"><div class="icon">${item.icon}</div><div class="text"><h4>${item.tarea}</h4><p>${item.hora}</p></div></div>`).join('');
+            document.getElementById('resumen-hoy').innerHTML = formatoHTML(rutinaSemanal[hoyIndex]);
+            document.getElementById('resumen-manana').innerHTML = formatoHTML(rutinaSemanal[mananaIndex]);
+        }
+
+        // --- LÓGICA DEL GYM ---
+        function guardarEjercicio() {
+            const nombre = document.getElementById('ejercicio-nombre').value;
+            const peso = document.getElementById('ejercicio-peso').value;
+            const reps = document.getElementById('ejercicio-reps').value;
+            const dolor = document.getElementById('ejercicio-dolor').value;
+            const dudas = document.getElementById('ejercicio-dudas').value;
+            if (nombre === '' || reps === '') return alert('Llena el nombre y las repeticiones.');
+
+            const nuevoEjercicio = { nombre, peso: peso ? peso + ' kg' : 'Sin peso', reps, dolor, dudas, fecha: new Date().toLocaleDateString() };
+            let registros = JSON.parse(localStorage.getItem('misEjercicios')) || [];
+            registros.unshift(nuevoEjercicio); 
+            localStorage.setItem('misEjercicios', JSON.stringify(registros));
+
+            document.getElementById('ejercicio-nombre').value = '';
+            document.getElementById('ejercicio-peso').value = '';
+            document.getElementById('ejercicio-reps').value = '';
+            document.getElementById('ejercicio-dolor').value = 'Ninguno';
+            document.getElementById('ejercicio-dudas').value = '';
+            mostrarEjercicios();
+            actualizarEstadisticas();
+        }
+        function mostrarEjercicios() {
+            const contenedor = document.getElementById('lista-ejercicios');
+            let registros = JSON.parse(localStorage.getItem('misEjercicios')) || [];
+            contenedor.innerHTML = registros.length === 0 ? '<p style="text-align:center; color:var(--text-muted);">Sin registros aún.</p>' : registros.map(ej => `
+                <div class="tarjeta-gym">
+                    <div class="header"><h4>${ej.nombre}</h4><span class="fecha">${ej.fecha}</span></div>
+                    <div class="detalles">⚖️ ${ej.peso} | 🔁 ${ej.reps}</div>
+                    ${ej.dolor !== 'Ninguno' ? `<div class="alerta-dolor">⚠️ ${ej.dolor}</div>` : ''}
+                    ${ej.dudas ? `<div class="alerta-nota">📝 Nota: ${ej.dudas}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // --- LÓGICA DE NOTAS ---
+        function guardarNota() {
+            const texto = document.getElementById('input-nota').value;
+            if (texto.trim() === '') return alert('Escribe algo primero.');
+            const nuevaNota = { texto, fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) };
+            let notas = JSON.parse(localStorage.getItem('misNotas')) || [];
+            notas.unshift(nuevaNota); 
+            localStorage.setItem('misNotas', JSON.stringify(notas));
+            document.getElementById('input-nota').value = '';
+            mostrarNotas();
+            actualizarEstadisticas();
+        }
+        function mostrarNotas() {
+            const contenedor = document.getElementById('lista-notas');
+            let notas = JSON.parse(localStorage.getItem('misNotas')) || [];
+            contenedor.innerHTML = notas.length === 0 ? '<p style="text-align:center; color:var(--text-muted);">No hay notas.</p>' : notas.map((nota, index) => `
+                <div class="tarjeta-nota">
+                    <button style="position:absolute; top:8px; right:8px; border:none; background:none; cursor:pointer; color:#dc2626; font-size:16px; font-weight:bold;" onclick="eliminarNota(${index})">✖</button>
+                    <p style="margin:0 0 8px 0; font-size:14px; white-space:pre-wrap; color:#78350f;">${nota.texto}</p>
+                    <small style="color:#a16207; font-size:11px;">${nota.fecha}</small>
+                </div>
+            `).join('');
+        }
+        function eliminarNota(index) {
+            let notas = JSON.parse(localStorage.getItem('misNotas')) || [];
+            notas.splice(index, 1); 
+            localStorage.setItem('misNotas', JSON.stringify(notas));
+            mostrarNotas();
+            actualizarEstadisticas();
+        }
+
+        // --- ESTADÍSTICAS ---
+        function actualizarEstadisticas() {
+            let gyms = JSON.parse(localStorage.getItem('misEjercicios')) || [];
+            let notas = JSON.parse(localStorage.getItem('misNotas')) || [];
+            const statGym = document.getElementById('stats-gym');
+            const statNotas = document.getElementById('stats-notas');
+            if(statGym) statGym.textContent = gyms.length;
+            if(statNotas) statNotas.textContent = notas.length;
+        }
+
+        // Inicializar
+        mostrarEjercicios();
+        mostrarNotas();
+        actualizarEstadisticas();
+        renderizarPlanPoli();
+    </script>
+</body>
+</html>
